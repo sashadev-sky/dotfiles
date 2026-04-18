@@ -1,0 +1,27 @@
+# Canonical MCP server definitions — managed by chezmoi.
+# Edit this file to add, remove, or modify MCP servers across all tools.
+# Run `chezmoi apply` to propagate changes to Cursor, Claude Code, and Codex.
+#
+# Schema:
+#   servers:
+#     - name: <server-name>
+#       transport: stdio | http
+#       # For stdio transport:
+#       command: <executable>
+#       args: [<arg>, ...]
+#       env: { KEY: value, ... }
+#       # For http transport:
+#       url: <https://...>
+#       headers: { HEADER_NAME: value, ... }
+servers:
+  - name: context7
+    transport: http
+    url: https://mcp.context7.com/mcp
+    headers:
+      CONTEXT7_API_KEY: "{{ .context7_api_key }}"
+  - name: playwright
+    transport: stdio
+    command: npx
+    args:
+      - "@playwright/mcp@latest"
+    env: {}

@@ -14,4 +14,4 @@
   {{- end -}}
   {{- $_ := set $out $s.name $entry -}}
 {{- end -}}
-{{ dict "mcpServers" $out | toPrettyJson }}
+{{ $out | toPrettyJson }}
