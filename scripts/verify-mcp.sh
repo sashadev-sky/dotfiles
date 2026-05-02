@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CHEZMOI_SRC="${CHEZMOI_SRC:-$HOME/.local/share/chezmoi}"
 CURSOR_JSON="$HOME/.cursor/mcp.json"
 CLAUDE_JSON="$HOME/.claude.json"
 CLAUDE_INT="$HOME/.claude/mcp_servers.json"
@@ -41,17 +40,7 @@ print(','.join(sorted(c.get('mcp_servers', {}).keys())) + ',')
 [ "$cursor_names" = "$claude_names" ] && pass "cursor == claude: $cursor_names" || fail "cursor ($cursor_names) != claude ($claude_names)"
 [ "$cursor_names" = "$codex_names" ]  && pass "cursor == codex:  $cursor_names" || fail "cursor ($cursor_names) != codex ($codex_names)"
 
-info "4. No literal secrets in committed chezmoi source"
-cd "$CHEZMOI_SRC"
-LEAK=$(git grep -nE 'ctx7sk-[A-Za-z0-9-]+' -- ':!chezmoi.toml' 2>/dev/null || true)
-if [ -z "$LEAK" ]; then
-  pass "no literal API key found in tracked files"
-else
-  fail "literal API key detected in tracked files:"
-  printf '%s\n' "$LEAK" | sed 's/^/        /'
-fi
-
-info "5. Rendered configs contain the real secret"
+info "4. Rendered configs contain the real secret"
 if jq -e '.mcpServers.context7.headers.CONTEXT7_API_KEY | test("^ctx7sk-")' "$CURSOR_JSON" >/dev/null; then
   pass "cursor: real key rendered"
 else
@@ -66,7 +55,7 @@ if python3 -c "
 import sys, tomllib
 with open(sys.argv[1], 'rb') as f:
     c = tomllib.load(f)
-k = c['mcp_servers']['context7']['headers']['CONTEXT7_API_KEY']
+k = c['mcp_servers']['context7']['http_headers']['CONTEXT7_API_KEY']
 sys.exit(0 if k.startswith('ctx7sk-') else 1)
 " "$CODEX_TOML"; then
   pass "codex: real key rendered"

@@ -1,0 +1,15 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "context7-api-key"
+description = "Context7 API key"
+regex = '''ctx7sk-[A-Za-z0-9-]{20,}'''
+keywords = ["ctx7sk-"]
+
+[allowlist]
+description = "chezmoi templates contain {{ .secret }}, not literals"
+paths = [
+  '''.*\.tmpl$''',
+  '''chezmoi\.toml''',
+]
