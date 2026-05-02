@@ -4,7 +4,7 @@ Personal machine configuration managed by [chezmoi](https://www.chezmoi.io/).
 
 ## Setup
 
-**1)** **Install `gitleaks` (one-time)**:
+**1**) **Install `gitleaks` (one-time)**:
 
 - macOS:
 
@@ -23,18 +23,17 @@ git config core.hooksPath .githooks
 ## Repo layout
 
 ```txt
-.
+dotfiles
 ├── .chezmoiignore
 ├── .chezmoiscripts/                      # hooks that run during `chezmoi apply`
 │   ├── run_after_20-merge-claude-mcp.sh  # merges ~/.claude/mcp_servers.json into ~/.claude.json
 │   └── run_after_30-merge-codex-mcp.sh   # merges ~/.codex/mcp_servers.toml into ~/.codex/config.toml
 ├── .githooks/
-│   └── pre-commit                        # runs gitleaks secret scan on every commit
+│   └── pre-commit                        # local: blocks commits containing secrets (gitleaks)
 ├── .github/workflows/
-│   ├── secrets.yml                       # runs gitleaks on every push and PR
-│   └── verify-mcp.yml                    # runs scripts/verify-mcp.sh on PRs to main
+│   └── secrets.yml                       # CI: blocks PRs/pushes containing secrets (gitleaks)
 ├── .gitignore
-├── .gitleaks.toml                        # gitleaks config
+├── .gitleaks.toml                        # gitleaks rules and allowlist
 ├── dot_claude/
 │   └── mcp_servers.json.tmpl             # → ~/.claude/mcp_servers.json  (intermediate)
 ├── dot_codex/
@@ -45,7 +44,7 @@ git config core.hooksPath .githooks
 │   └── private_mcp.json.tmpl             # → ~/.cursor/mcp.json
 ├── dot_zshenv.tmpl                       # → ~/.zshenv
 ├── scripts/
-│   └── verify-mcp.sh                     # asserts rendered MCP configs exist, parse, and agree
+│   └── verify-mcp.sh                     # post-apply: validates rendered MCP configs
 └── README.md
 ```
 
@@ -110,6 +109,14 @@ chezmoi apply
     chezmoi apply
     ```
 
+### Validate rendered configs
+
+After `chezmoi apply`, confirm the output files parse, agree on server names, and contain the real (non-placeholder) secret:
+
+```shell
+./scripts/verify-mcp.sh
+```
+
 ### Bootstrap on a new machine
 
 1. Clone and apply:
@@ -127,7 +134,8 @@ chezmoi apply
 
 ## Secrets
 
-Secrets referenced in templates, such as `{{ .context7_api_key }}`, live in `~/.config/chezmoi/chezmoi.toml`, which is machine-local and not part of this repo. Two guards protect against accidental commits of literal secret values:
+Secrets referenced in templates, such as `{{ .context7_api_key }}`, live in `~/.config/chezmoi/chezmoi.toml`, which is machine-local and not part of this repo. Three guards protect against accidental commits of literal secret values:
 
 1. `.gitignore` keeps backup and rendered artifacts out of the repo.
-2. `scripts/verify-mcp.sh` greps the tracked tree for exposed key prefixes and fails if it finds one.
+2. **Pre-commit hook** (`.githooks/pre-commit`) runs `gitleaks` against staged changes on every commit. Enable hooks after cloning: see [Setup](#setup).
+3. **CI enforcement** (`.github/workflows/secrets.yml`) runs `gitleaks` on every PR to `main` and on direct pushes to `main`. Required to pass before merging.
