@@ -2,6 +2,55 @@
 
 Personal machine configuration managed by [chezmoi](https://www.chezmoi.io/).
 
+## Setup
+
+**1)** **Install `gitleaks` (one-time)**:
+
+- macOS:
+
+  ```shell
+  brew install gitleaks
+  ```
+
+- Linux: see <https://github.com/gitleaks/gitleaks#installing>
+
+**2**) **Then enable hooks**:
+
+```shell
+git config core.hooksPath .githooks
+```
+
+## Repo layout
+
+```txt
+.
+├── .chezmoiignore
+├── .chezmoiscripts/                      # hooks that run during `chezmoi apply`
+│   ├── run_after_20-merge-claude-mcp.sh  # merges ~/.claude/mcp_servers.json into ~/.claude.json
+│   └── run_after_30-merge-codex-mcp.sh   # merges ~/.codex/mcp_servers.toml into ~/.codex/config.toml
+├── .githooks/
+│   └── pre-commit                        # runs gitleaks secret scan on every commit
+├── .github/workflows/
+│   ├── secrets.yml                       # runs gitleaks on every push and PR
+│   └── verify-mcp.yml                    # runs scripts/verify-mcp.sh on PRs to main
+├── .gitignore
+├── .gitleaks.toml                        # gitleaks config
+├── dot_claude/
+│   └── mcp_servers.json.tmpl             # → ~/.claude/mcp_servers.json  (intermediate)
+├── dot_codex/
+│   └── mcp_servers.toml.tmpl             # → ~/.codex/mcp_servers.toml   (intermediate)
+├── dot_config/mcp/
+│   └── servers.yaml.tmpl                 # single source of truth for MCP servers
+├── dot_cursor/
+│   └── private_mcp.json.tmpl             # → ~/.cursor/mcp.json
+├── dot_zshenv.tmpl                       # → ~/.zshenv
+├── scripts/
+│   └── verify-mcp.sh                     # asserts rendered MCP configs exist, parse, and agree
+└── README.md
+```
+
+Anything under a `dot_*` path is a chezmoi source file: chezmoi renames `dot_foo` → `~/.foo` and expands any `.tmpl` suffix using values from `~/.config/chezmoi/chezmoi.toml` when running `chezmoi apply`.
+
 ## MCP configuration (Cursor, Claude Code, Codex)
 
 A single canonical source drives MCP server configuration for all three AI coding tools.
