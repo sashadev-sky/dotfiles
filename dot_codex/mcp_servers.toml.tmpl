@@ -17,7 +17,7 @@ args = {{ $s.args | toJson }}
 {{- else if eq $s.transport "http" }}
 url = {{ $s.url | toJson }}
 {{- if $s.headers }}
-[mcp_servers.{{ $s.name }}.headers]
+[mcp_servers.{{ $s.name }}.http_headers]
 {{- range $k, $v := $s.headers }}
 {{ $k }} = {{ $v | toJson }}
 {{- end }}
